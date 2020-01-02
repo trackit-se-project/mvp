@@ -21,14 +21,17 @@ app.use([cors(), bodyParser()]);
 
 /*  USERS   */
 
+// LOGIN. Receive email and pass and send the user data back.
+
 // I'm making a POST request since I'm sending some params from the front-end.
 // The params are found in req.body.yourParam, and they depend on how you sent them from React.
 // In my case, when I want to login, I have two inputs, email and pass, so I will receive and object with these keys.
 
-// To use this api, front-end will make a request on localhost:3000/users with a json object containing the params.
-
-app.post("/users", function(req, res) {
+// To use this api, front-end will make a request on localhost:3000/login with a json object containing the params.
+app.post("/login", function(req, res) {
   // req is request, what comes, res is response what goes
+
+  // { "email": "bogdan.test@trackit.com", "pass": "123abc" } - my request for the login. I created this user from the mongo command line.
 
   // findOne finds the first occurence. Using find will return an array.
   // I'm searching for an object with the email key equal with the one front-end sent me.
@@ -40,6 +43,8 @@ app.post("/users", function(req, res) {
       res.send({ msg: "Something went wrong!" }); // Always send a respons to avoid a timeout error.
 
       console.log(err); // Also, print the error to debug.
+
+      throw err; // the rest has no point in being executed
     }
 
     if (result) {
@@ -58,6 +63,55 @@ app.post("/users", function(req, res) {
     } else {
       res.statusCode = 404; // not found
       res.send({ msg: "No account on this email address!" });
+    }
+  });
+});
+
+// REGISTER. Receive an email and pass, save the user in the database and send the saved data back.
+
+app.post("/register", function(req, res) {
+  db.collection("users").findOne({ email: req.body.email }, function(
+    err,
+    result
+  ) {
+    if (err) {
+      res.statusCode = 500;
+      res.send({ msg: "Something went wrong!" });
+
+      console.log(err);
+
+      throw err;
+    }
+
+    if (result) {
+      res.statusCode = 400; // Bad request
+      res.send({
+        msg: "An account already exists on this email! Use the login! "
+      });
+    } else {
+      // save the new user
+      db.collection("users").insert(
+        { email: req.body.email, pass: req.body.pass },
+        function(err, obj) {
+          // maybe something went wrong on the write operation
+          if (err) {
+            res.statusCode = 500;
+            res.send({ msg: "Something went wrong!" });
+
+            console.log(err);
+
+            throw err;
+          }
+
+          console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+          res.statusCode = 201; // Created
+          res.send({
+            _id: obj.ops[0]._id,
+            email: obj.ops[0].email
+          });
+        }
+      );
     }
   });
 });

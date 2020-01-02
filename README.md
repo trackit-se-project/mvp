@@ -66,6 +66,81 @@ While <b>index.js</b> is running in the background, you can keep the logs on to 
 
 Here you'll find the root of the application. The connection to the database is already made. Here, you'll create APIs for your feature which the ReactNative app will call to make CRUD operations.
 
+The flow is: get requests from the front-end, query the db or do something else, send a response back.
+
 The operations you can perform are: <b>GET</b> (to fetch chunks of data or single resource), <b>POST</b> (to create new data), <b>PUT</b> (to update a resource), <b>DELETE</b>.
 
-You'll find an example for <b>users</b>. You'll have to do the same for your feature.
+You'll find a POST example for <b>users</b>. You'll have to do the same for your feature. More comments in the code.
+
+Here are some other examples but not applicable for users. <i>boards</i> was my resource name then. You will use something like: `localhost:3000/waterTracker` with the specific HTTP verb.
+
+<b>GET</b> Return a whole array of resources. Callable at `localhost:3000/boards`. This HTTP verbs are set when the request is made in front-end.
+
+```
+app.get("/boards", function(req, res) {
+db.collection("boards")
+.find()
+.toArray((err, result) => {
+if (err) return console.log(err);
+
+      res.send({
+        boards: result
+      });
+    });
+
+});
+```
+
+<b>GET by id</b> Search and return a resource by id. Callable at: `localhost:3000/boards/:id`, where id will most likely be a long unique string.
+
+```
+app.get("/boards/:id", function(req, res) {
+db.collection("boards")
+.find({ _id: req.params.id })
+.toArray((err, result) => {
+if (err) return console.log(err);
+
+      res.send({
+        boards: result
+      });
+    });
+
+});
+```
+
+<b>PUT</b> Needs id to know what to update. Returns the updated object. Callable at: `localhost:3000/boards/:id`.
+
+```
+app.put("/boards/:id", function(req, res) {
+  db.collection("boards").update(
+    { _id: new mongodb.ObjectID(req.params.id) },
+    { $set: { board_name: req.body.board_name } },
+    function(err, obj) {
+      if (err) return console.log(err);
+
+      res.send({
+        new_board_name: req.body.board_name
+      });
+    }
+  );
+});
+```
+
+<b>DELETE</b> Also needs id. Callable at: `localhost:3000/boards/:id`. Return the id of the deleted resource.
+
+```
+app.delete("/boards/:id", function(req, res) {
+  db.collection("boards").remove(
+    { _id: new mongodb.ObjectID(req.params.id) },
+    function(err, obj) {
+      if (err) return console.log(err);
+
+      console.log(obj.result.n + " record(s) deleted");
+
+      res.send({
+        _id: req.params.id
+      });
+    }
+  );
+});
+```
