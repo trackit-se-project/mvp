@@ -47,6 +47,8 @@ app.post("/login", function(req, res) {
       throw err; // the rest has no point in being executed
     }
 
+    console.log(result);
+
     if (result) {
       if (result.pass == req.body.pass) {
         res.statusCode = 200; // 2xx are good codes, 200 is ok
@@ -83,6 +85,8 @@ app.post("/register", function(req, res) {
       throw err;
     }
 
+    console.log(result);
+
     if (result) {
       res.statusCode = 400; // Bad request
       res.send({
@@ -114,4 +118,66 @@ app.post("/register", function(req, res) {
       );
     }
   });
+});
+
+// EVENTS. Do stuff
+app.post("/login", function(req, res) {
+  // req is request, what comes, res is response what goes
+
+  // { "email": "bogdan.test@trackit.com", "pass": "123abc" } - my request for the login. I created this user from the mongo command line.
+
+  // findOne finds the first occurence. Using find will return an array.
+  // I'm searching for an object with the email key equal with the one front-end sent me.
+  // findOne receives an object to query after and a callback function where the result is handled.
+
+  db.collection("users").findOne({ email: req.body.email }, (err, result) => {
+    if (err) {
+      res.statusCode = 500; // 5xx are errors on server's side. 500 is Internal Server Error.
+      res.send({ msg: "Something went wrong!" }); // Always send a respons to avoid a timeout error.
+
+      console.log(err); // Also, print the error to debug.
+
+      throw err; // the rest has no point in being executed
+    }
+
+    if (result) {
+      if (result.pass == req.body.pass) {
+        res.statusCode = 200; // 2xx are good codes, 200 is ok
+        res.send({
+          _id: result._id,
+          email: result.email
+        });
+      } else {
+        // 4xx codes are wrong on the client side. 401 is unauthorised. We want to tell the user the username/pass combination is wrong.
+
+        res.statusCode = 401;
+        res.send({ msg: "Wrong email or password!" });
+      }
+    } else {
+      res.statusCode = 404; // not found
+      res.send({ msg: "No account on this email address!" });
+    }
+  });
+});
+
+app.post("/events", function(req, res) {
+  db.collection("events").insert(
+    { userId: req.body.userId, date: req.body.date, event: req.body.event },
+    function(err, obj) {
+      // maybe something went wrong on the write operation
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
+
+      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+      res.statusCode = 201; // Created
+      res.send({ msg: "ok" });
+    }
+  );
 });
