@@ -120,46 +120,6 @@ app.post("/register", function(req, res) {
   });
 });
 
-// EVENTS. Do stuff
-app.post("/login", function(req, res) {
-  // req is request, what comes, res is response what goes
-
-  // { "email": "bogdan.test@trackit.com", "pass": "123abc" } - my request for the login. I created this user from the mongo command line.
-
-  // findOne finds the first occurence. Using find will return an array.
-  // I'm searching for an object with the email key equal with the one front-end sent me.
-  // findOne receives an object to query after and a callback function where the result is handled.
-
-  db.collection("users").findOne({ email: req.body.email }, (err, result) => {
-    if (err) {
-      res.statusCode = 500; // 5xx are errors on server's side. 500 is Internal Server Error.
-      res.send({ msg: "Something went wrong!" }); // Always send a respons to avoid a timeout error.
-
-      console.log(err); // Also, print the error to debug.
-
-      throw err; // the rest has no point in being executed
-    }
-
-    if (result) {
-      if (result.pass == req.body.pass) {
-        res.statusCode = 200; // 2xx are good codes, 200 is ok
-        res.send({
-          _id: result._id,
-          email: result.email
-        });
-      } else {
-        // 4xx codes are wrong on the client side. 401 is unauthorised. We want to tell the user the username/pass combination is wrong.
-
-        res.statusCode = 401;
-        res.send({ msg: "Wrong email or password!" });
-      }
-    } else {
-      res.statusCode = 404; // not found
-      res.send({ msg: "No account on this email address!" });
-    }
-  });
-});
-
 // CALENDAR
 
 app.post("/events", function(req, res) {
@@ -278,13 +238,16 @@ app.post("/water", function(req, res) {
   );
 });
 
-/*  TODOS   */
+//  TODOS
+
 app.post("/todos", function(req, res) {
   db.collection("todos").insert(
-    { taskName: req.body.taskName,
+    {
+      taskName: req.body.taskName,
       email: req.body.email,
       date: req.body.date,
-      checked: req.body.checked},
+      checked: req.body.checked
+    },
     function(err, obj) {
       // maybe something went wrong on the write operation
       if (err) {
@@ -298,17 +261,16 @@ app.post("/todos", function(req, res) {
 
       res.statusCode = 201; // Created
       res.send({
-        _id: obj.ops[0]._id,
-
+        _id: obj.ops[0]._id
       });
     }
-  );  
+  );
 });
 
 app.get("/todos", function(req, res) {
   db.collection("todos")
     .find({
-      email: req.query.email,
+      email: req.query.email
     })
     .toArray(function(err, result) {
       if (err) {
@@ -326,9 +288,9 @@ app.get("/todos", function(req, res) {
 });
 
 app.delete("/todos/:id", function(req, res) {
-  mongo = require('mongodb');
+  mongo = require("mongodb");
   db.collection("todos").deleteOne(
-    { _id: mongo.ObjectID(req.params.id)},
+    { _id: mongo.ObjectID(req.params.id) },
     function(err, obj) {
       // maybe something went wrong on the write operation
       if (err) {
@@ -340,32 +302,28 @@ app.delete("/todos/:id", function(req, res) {
       console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
 
       res.send({
-        success: req.params.id,
+        success: req.params.id
       });
     }
-  );  
+  );
 });
 
 app.put("/todos/:id", function(req, res) {
-  mongo = require('mongodb');
-  var myquery = { _id: mongo.ObjectID(req.params.id)};
-  var newvalues = { $set: {checked: req.body.checked} };
-  db.collection("todos").updateOne(
-    myquery,
-    newvalues,
-    function(err, obj) {
-      // maybe something went wrong on the write operation
-      if (err) {
-        res.statusCode = 500;
-        res.send({ msg: "Something went wrong!" });
-        console.log(err);
-        throw err;
-      }
-      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
-
-      res.send({
-        success: req.params.id,
-      });
+  mongo = require("mongodb");
+  var myquery = { _id: mongo.ObjectID(req.params.id) };
+  var newvalues = { $set: { checked: req.body.checked } };
+  db.collection("todos").updateOne(myquery, newvalues, function(err, obj) {
+    // maybe something went wrong on the write operation
+    if (err) {
+      res.statusCode = 500;
+      res.send({ msg: "Something went wrong!" });
+      console.log(err);
+      throw err;
     }
-  );  
+    console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+    res.send({
+      success: req.params.id
+    });
+  });
 });
