@@ -160,6 +160,8 @@ app.post("/login", function(req, res) {
   });
 });
 
+// CALENDAR
+
 app.post("/events", function(req, res) {
   db.collection("events").insert(
     { userId: req.body.userId, date: req.body.date, event: req.body.event },
@@ -174,10 +176,104 @@ app.post("/events", function(req, res) {
         throw err;
       }
 
-      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+      res.statusCode = 201; // Created
+      res.send({
+        event: obj.ops[0]
+      });
+    }
+  );
+});
+
+app.get("/events", function(req, res) {
+  db.collection("events")
+    .find({
+      userId: req.query.userId,
+      date: req.query.date
+    })
+    .toArray(function(err, result) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
+
+      res.statusCode = 200;
+      res.send({
+        events: result
+      });
+    });
+});
+
+app.delete("/events/:id", function(req, res) {
+  db.collection("events").remove(
+    {
+      _id: new mongodb.ObjectID(req.params.id)
+    },
+    function(err, obj) {
+      if (err) return console.log(err);
+
+      console.log(obj.result.n + " record(s) deleted");
+
+      res.send({
+        _id: req.params.id
+      });
+    }
+  );
+});
+
+// WATER TRACKER
+
+app.get("/water", function(req, res) {
+  db.collection("water")
+    .find({
+      userId: req.query.userId,
+      date: req.query.date
+    })
+    .toArray(function(err, result) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
+
+      totalAmount = 0;
+      result.forEach(entry => (totalAmount += entry.amount));
+
+      res.statusCode = 200;
+      res.send({
+        totalAmount: totalAmount
+      });
+    });
+});
+
+app.post("/water", function(req, res) {
+  db.collection("water").insert(
+    {
+      userId: req.body.userId,
+      date: req.body.date,
+      amount: req.body.amount
+    },
+    function(err, obj) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
 
       res.statusCode = 201; // Created
-      res.send({ msg: "ok" });
+      res.send({
+        date: obj.ops[0].date,
+        amount: obj.ops[0].amount
+      });
     }
   );
 });
