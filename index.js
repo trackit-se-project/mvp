@@ -169,3 +169,57 @@ app.post("/water", function(req, res) {
     }
   );
 });
+
+// SLEEP TRACKER
+
+app.get("/sleep", function(req, res) {
+  db.collection("sleep")
+    .find({
+      userId: req.query.userId,
+      date: req.query.date
+    })
+    .toArray(function(err, result) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
+
+      totalAmount = 0;
+      result.forEach(entry => (totalAmount += entry.amount));
+
+      res.statusCode = 200;
+      res.send({
+        totalAmount: totalAmount
+      });
+    });
+});
+
+app.post("/sleep", function(req, res) {
+  db.collection("sleep").insert(
+    {
+      userId: req.body.userId,
+      date: req.body.date,
+      amount: req.body.amount
+    },
+    function(err, obj) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+
+        console.log(err);
+
+        throw err;
+      }
+
+      res.statusCode = 201; // Created
+      res.send({
+        date: obj.ops[0].date,
+        amount: obj.ops[0].amount
+      });
+    }
+  );
+});
