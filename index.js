@@ -169,3 +169,95 @@ app.post("/water", function(req, res) {
     }
   );
 });
+
+/*  TODOS   */
+app.post("/todos", function(req, res) {
+  db.collection("todos").insert(
+    { taskName: req.body.taskName,
+      email: req.body.email,
+      date: req.body.date,
+      checked: req.body.checked},
+    function(err, obj) {
+      // maybe something went wrong on the write operation
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+        console.log(err);
+        throw err;
+      }
+
+      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+      res.statusCode = 201; // Created
+      res.send({
+        _id: obj.ops[0]._id,
+
+      });
+    }
+  );  
+});
+
+app.get("/todos", function(req, res) {
+  db.collection("todos")
+    .find({
+      email: req.query.email,
+    })
+    .toArray(function(err, result) {
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+        console.log(err);
+        throw err;
+      }
+
+      res.statusCode = 200;
+      res.send({
+        todos: result
+      });
+    });
+});
+
+app.delete("/todos/:id", function(req, res) {
+  mongo = require('mongodb');
+  db.collection("todos").deleteOne(
+    { _id: mongo.ObjectID(req.params.id)},
+    function(err, obj) {
+      // maybe something went wrong on the write operation
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+        console.log(err);
+        throw err;
+      }
+      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+      res.send({
+        success: req.params.id,
+      });
+    }
+  );  
+});
+
+app.put("/todos/:id", function(req, res) {
+  mongo = require('mongodb');
+  var myquery = { _id: mongo.ObjectID(req.params.id)};
+  var newvalues = { $set: {checked: req.body.checked} };
+  db.collection("todos").updateOne(
+    myquery,
+    newvalues,
+    function(err, obj) {
+      // maybe something went wrong on the write operation
+      if (err) {
+        res.statusCode = 500;
+        res.send({ msg: "Something went wrong!" });
+        console.log(err);
+        throw err;
+      }
+      console.log(obj); // the object also contains some status codes, number of rows inserted etc. We want only the stored data. It is found in the ops[0] key. [0] first element of the result because you can store whole arrays.
+
+      res.send({
+        success: req.params.id,
+      });
+    }
+  );  
+});
